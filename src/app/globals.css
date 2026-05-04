@@ -394,6 +394,82 @@
     margin-top: 18px;
   }
 
+  /* — deep-read collapsible — "AI 读到了什么" — */
+  .deep-read {
+    margin: 8px auto 24px;
+    max-width: 100%;
+  }
+  .deep-read-toggle {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    background: transparent;
+    border: 0;
+    padding: 6px 10px;
+    color: var(--ink-muted);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border-bottom: 1px dotted var(--ink-muted);
+    transition: color 160ms;
+  }
+  .deep-read-toggle:hover {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .deep-read-toggle .chevron {
+    font-size: 11px;
+    color: var(--ink-muted);
+  }
+  .deep-read-body {
+    margin: 14px 0 0;
+    padding: 18px 20px;
+    background: var(--paper-deep);
+    border-radius: 2px;
+    font-family: var(--font-serif);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .deep-read-body .dr-row {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 14px;
+    padding: 4px 0;
+  }
+  .deep-read-body .dr-row + .dr-row {
+    border-top: 1px dotted var(--ink-muted);
+    margin-top: 2px;
+    padding-top: 8px;
+  }
+  .deep-read-body dt {
+    font-style: italic;
+    color: var(--ink-muted);
+    font-size: 13px;
+  }
+  .deep-read-body dd {
+    margin: 0;
+    color: var(--ink);
+  }
+  .deep-read-body dd strong {
+    font-weight: 400;
+    font-style: italic;
+    color: var(--accent-resonance);
+    margin-right: 4px;
+  }
+  .deep-read-body .dr-evidence {
+    color: var(--ink-muted);
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  @media (max-width: 640px) {
+    .deep-read-body { padding: 14px 16px; font-size: 13px; }
+    .deep-read-body .dr-row { grid-template-columns: 74px 1fr; gap: 10px; }
+    .deep-read-body dt { font-size: 12px; }
+  }
+
   /* — section opener — quiet, no line, just air + small caps —*/
   .section-opener {
     display: flex;

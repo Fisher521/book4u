@@ -31,11 +31,52 @@ type BookBase = {
 type ResonanceBook = BookBase & { mood_match: string };
 type BreakBubbleBook = BookBase & { breaks_from: string };
 
+type DeepRead = {
+  theme: string;
+  theme_evidence: string;
+  surface_emotion: string;
+  hidden_emotion: string;
+  hidden_need: 'be_understood' | 'be_disrupted' | 'be_accompanied' | 'be_awakened' | 'be_held';
+  tension_locus: 'intimate' | 'work' | 'self' | 'aging' | 'identity' | 'economic';
+  mbti_alignment: 'aligned' | 'mild_drift' | 'strong_conflict';
+  conflict_note?: string;
+  cultural_signals?: string[];
+  media_hints?: {
+    music?: string[];
+    videos?: string[];
+    other?: string[];
+  };
+};
+
 type Recommendation = {
+  deep_read?: DeepRead;
   mood_summary: string;
   resonance: ResonanceBook[];
   break_bubble: BreakBubbleBook[];
   _meta?: { cost_usd?: number; model?: string; retry_rounds?: number; unverified_count?: number };
+};
+
+const HIDDEN_NEED_LABEL: Record<DeepRead['hidden_need'], string> = {
+  be_understood: '想被理解（不必被解决）',
+  be_disrupted: '想被打破',
+  be_accompanied: '想被陪伴',
+  be_awakened: '想被点醒',
+  be_held: '想被托住',
+};
+
+const TENSION_LABEL: Record<DeepRead['tension_locus'], string> = {
+  intimate: '亲密关系',
+  work: '工作',
+  self: '自我',
+  aging: '衰老',
+  identity: '身份',
+  economic: '经济',
+};
+
+const ALIGNMENT_LABEL: Record<DeepRead['mbti_alignment'], string> = {
+  aligned: '和你 MBTI baseline 一致',
+  mild_drift: '偏离 baseline 一点',
+  strong_conflict: '强烈偏离 baseline',
 };
 
 type FormSnapshot = {
@@ -356,6 +397,8 @@ function Results({
     <section className="results fade-in" key={data.mood_summary}>
       <p className="mood-summary">{data.mood_summary}</p>
 
+      {data.deep_read && <DeepReadView data={data.deep_read} />}
+
       <div className="section-opener">
         <span className="label">PART ONE · <span className="accent-r">共鸣</span></span>
         <span className="descriptor">与你同频</span>
@@ -593,6 +636,81 @@ function DoubanIcon() {
         豆
       </text>
     </svg>
+  );
+}
+
+function DeepReadView({ data }: { data: DeepRead }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="deep-read">
+      <button
+        type="button"
+        className="deep-read-toggle"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+      >
+        <span>AI 读到了什么</span>
+        <span className="chevron">{open ? '▴' : '▾'}</span>
+      </button>
+      {open && (
+        <dl className="deep-read-body">
+          <div className="dr-row">
+            <dt>主题</dt>
+            <dd>
+              <strong>{data.theme}</strong>
+              {data.theme_evidence && (
+                <span className="dr-evidence"> · {data.theme_evidence}</span>
+              )}
+            </dd>
+          </div>
+          <div className="dr-row">
+            <dt>你能感到的</dt>
+            <dd>{data.surface_emotion}</dd>
+          </div>
+          <div className="dr-row">
+            <dt>你没说的</dt>
+            <dd>{data.hidden_emotion}</dd>
+          </div>
+          <div className="dr-row">
+            <dt>真正想要的</dt>
+            <dd>{HIDDEN_NEED_LABEL[data.hidden_need]}</dd>
+          </div>
+          <div className="dr-row">
+            <dt>张力在</dt>
+            <dd>{TENSION_LABEL[data.tension_locus]}</dd>
+          </div>
+          <div className="dr-row">
+            <dt>MBTI</dt>
+            <dd>
+              {ALIGNMENT_LABEL[data.mbti_alignment]}
+              {data.conflict_note && (
+                <span className="dr-evidence"> · {data.conflict_note}</span>
+              )}
+            </dd>
+          </div>
+          {data.cultural_signals && data.cultural_signals.length > 0 && (
+            <div className="dr-row">
+              <dt>文化信号</dt>
+              <dd>{data.cultural_signals.join(' · ')}</dd>
+            </div>
+          )}
+          {data.media_hints && Object.values(data.media_hints).some((arr) => arr && arr.length) && (
+            <div className="dr-row">
+              <dt>媒体线索</dt>
+              <dd>
+                {[
+                  data.media_hints.music?.length ? `🎵 ${data.media_hints.music.join('、')}` : null,
+                  data.media_hints.videos?.length ? `📺 ${data.media_hints.videos.join('、')}` : null,
+                  data.media_hints.other?.length ? data.media_hints.other.join('、') : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </dd>
+            </div>
+          )}
+        </dl>
+      )}
+    </div>
   );
 }
 
