@@ -68,7 +68,7 @@
 
   /* — page frame — */
   .page {
-    max-width: min(880px, 92vw);
+    max-width: min(1080px, 92vw);
     margin: 0 auto;
     padding: clamp(28px, 4.5vw, 64px) 0 64px;
     position: relative;
