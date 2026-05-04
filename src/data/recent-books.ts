@@ -119,11 +119,54 @@ export const RECENT_BOOKS: RecentBook[] = [
     taste: 'INFP / INFJ / ENFP',
     note: 'Vuong 第二部长篇。康涅狄格小镇、跨代孤独、阿片危机。诗的语言写小说。',
   },
+  {
+    title: 'Martyr!',
+    author: 'Kaveh Akbar',
+    year: 2024,
+    taste: 'INFP / INFJ / INTP',
+    note: '诗人首部长篇。伊朗裔美国人，戒酒、母亲被击落的航班、博物馆里的死亡艺术家。',
+  },
+  {
+    title: 'My Friends',
+    author: 'Hisham Matar',
+    year: 2024,
+    taste: 'INFJ / INFP / ENFJ',
+    note: '布克奖入围。利比亚流亡者三十年友谊，伦敦使馆门前的一颗子弹改变所有人。',
+  },
+  {
+    title: 'Wandering Stars',
+    author: 'Tommy Orange',
+    year: 2024,
+    taste: 'INFP / INFJ / ISFP',
+    note: '《There There》续篇。原住民家族六代史，从屠杀幸存者到当代奥克兰少年。',
+  },
+  {
+    title: 'Small Rain',
+    author: 'Garth Greenwell',
+    year: 2024,
+    taste: 'INFJ / INFP / ISFJ',
+    note: 'ICU 病房里的爱、疼痛、身体。三百页几乎没离开病床，却比任何旅行小说更远。',
+  },
+  {
+    title: 'The Eleventh Hour',
+    author: 'Salman Rushdie',
+    year: 2025,
+    taste: 'ENTP / INTP / ENFP',
+    note: 'Rushdie 遇袭康复后第一本短篇集（2025 年 11 月）。五个故事，向 EM Forster 致敬。',
+  },
+  {
+    title: 'Pathemata, or, The Story of My Mouth',
+    author: 'Maggie Nelson',
+    year: 2025,
+    taste: 'INFP / INFJ / ENTP',
+    note: 'Nelson 写下颌慢性疼痛的小书。极薄、极锋利，写身体的不可言说。',
+  },
 
   // ── 2026 ──────────────────────────────────────────────────
-  // 训练 cutoff 限制：2026 新书我（Claude）只能识别零星预告，
-  // 直接列出来风险很大（可能推一本豆瓣根本没有的书 → 校验 fail → 重试浪费）。
-  // 你（Fisher）若读到/听说 2026 新书，确认豆瓣已收录后再 append 到这里。
+  // 我（Claude）的训练数据延伸到 2026 年 1 月，2026 年的"已上市新书"我能识别的极少
+  // （多数 2026 新书在我训练时还是预告，没正式发售/没上豆瓣）。
+  // 与其硬列让模型推一本豆瓣没有的书（→ 校验 fail → 重试浪费），不如等你读到/听说后
+  // 确认豆瓣已收录再 append。
 ];
 
 /**
