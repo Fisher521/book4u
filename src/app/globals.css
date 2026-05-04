@@ -556,11 +556,8 @@
   .book .byline .em { margin: 0 8px; color: var(--ink-muted); }
   .book .byline .tag { font-style: italic; color: var(--ink-muted); }
 
-  .book .head .hook {
-    margin-top: 4px;
-    font-size: clamp(16px, 1.95vw, 19px);
-    line-height: 1.55;
-  }
+  /* hook now sits below ornament as the literary lead-in to the why paragraph */
+  .book .hook { margin-bottom: 14px; }
 
   /* between cover-row and hook: no rules, just an asterism centered */
   .book .ornament {
@@ -774,7 +771,7 @@
     .book .title { font-size: 22px; line-height: 1.25; }
     .book .category { font-size: 11px; padding: 1px 7px; }
     .book .byline { font-size: 13px; margin: 8px 0 12px; }
-    .book .head .hook { font-size: 17px; line-height: 1.6; margin-top: 10px; }
+    .book .hook { font-size: 17px; line-height: 1.6; margin-bottom: 12px; }
     .book .why { font-size: 16px; line-height: 1.85; }
     .book .match { font-size: 13px; line-height: 1.7; margin-top: 16px; }
     .book .footer { gap: 12px; padding-top: 16px; font-size: 13px; }

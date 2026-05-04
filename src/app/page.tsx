@@ -491,7 +491,6 @@ function BookEntry({
               </>
             )}
           </p>
-          <p className="hook">{entry.hook}</p>
         </div>
       </div>
 
@@ -500,6 +499,8 @@ function BookEntry({
         <span className="glyph">❦</span>
         <span className="rule" />
       </div>
+
+      <p className="hook">{entry.hook}</p>
 
       <p className="why">{entry.why}</p>
 
