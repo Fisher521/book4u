@@ -13,6 +13,7 @@ export type LLMInput = {
   images: LLMImage[];
   temperature?: number;
   abortSignal?: AbortSignal;
+  model?: string; // override default — e.g. 'qwen-max-latest' for stronger text reasoning
 };
 
 export type LLMOutput = {
@@ -27,14 +28,19 @@ export function getModel(): string {
   return MODEL;
 }
 
-// Approximate Qwen-VL-Max pricing (CNY) → USD rough conversion
-// qwen-vl-max: input ¥0.02/1K, output ¥0.02/1K (as of 2025)
-const QWEN_INPUT_USD_PER_1K = 0.02 / 7;
-const QWEN_OUTPUT_USD_PER_1K = 0.02 / 7;
+// Approximate pricing per model (CNY → USD ≈ /7)
+const QWEN_PRICING: Record<string, { input: number; output: number }> = {
+  'qwen-vl-max': { input: 0.02 / 7, output: 0.02 / 7 },
+  'qwen-max-latest': { input: 0.04 / 7, output: 0.12 / 7 },
+  'qwen-max': { input: 0.04 / 7, output: 0.12 / 7 },
+  'qwen-plus': { input: 0.0008 / 7, output: 0.002 / 7 },
+};
 
 async function callQwen(input: LLMInput): Promise<LLMOutput> {
   const apiKey = process.env.DASHSCOPE_API_KEY;
   if (!apiKey) throw new Error('DASHSCOPE_API_KEY 未配置（在 .env.local 里加上）');
+
+  const modelName = input.model ?? MODEL;
 
   const content: Array<
     | { type: 'text'; text: string }
@@ -58,7 +64,7 @@ async function callQwen(input: LLMInput): Promise<LLMOutput> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: modelName,
         messages: [
           { role: 'system', content: input.systemPrompt },
           { role: 'user', content },
@@ -84,12 +90,13 @@ async function callQwen(input: LLMInput): Promise<LLMOutput> {
 
   let cost: number | undefined;
   if (data.usage) {
+    const pricing = QWEN_PRICING[modelName] ?? QWEN_PRICING['qwen-vl-max'];
     cost =
-      (data.usage.prompt_tokens / 1000) * QWEN_INPUT_USD_PER_1K +
-      (data.usage.completion_tokens / 1000) * QWEN_OUTPUT_USD_PER_1K;
+      (data.usage.prompt_tokens / 1000) * pricing.input +
+      (data.usage.completion_tokens / 1000) * pricing.output;
   }
 
-  return { text, model: MODEL, cost_usd: cost };
+  return { text, model: modelName, cost_usd: cost };
 }
 
 async function callClaude(input: LLMInput): Promise<LLMOutput> {
@@ -152,7 +159,8 @@ async function callClaude(input: LLMInput): Promise<LLMOutput> {
 }
 
 export async function callLLM(input: LLMInput): Promise<LLMOutput> {
-  if (MODEL.startsWith('qwen')) return callQwen(input);
-  if (MODEL.startsWith('claude')) return callClaude(input);
-  throw new Error(`不支持的 MODEL: ${MODEL}（支持 qwen-* 或 claude-*）`);
+  const model = input.model ?? MODEL;
+  if (model.startsWith('qwen')) return callQwen(input);
+  if (model.startsWith('claude')) return callClaude(input);
+  throw new Error(`不支持的 MODEL: ${model}（支持 qwen-* 或 claude-*）`);
 }

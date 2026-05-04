@@ -78,6 +78,26 @@ const ReplacementSchema = z.object({
   replacements: z.array(z.union([ResonanceBookSchema, BreakBubbleBookSchema])),
 });
 
+// Stage 1 output: just the deep_read signal extraction
+const DeepReadOnlySchema = z.object({
+  deep_read: DeepReadSchema,
+});
+
+// Stage 2 / Critique output: 5 books with mood_summary, NO deep_read
+const BooksOnlySchema = z.object({
+  mood_summary: z.string(),
+  resonance: z.array(ResonanceBookSchema).min(3).max(3),
+  break_bubble: z.array(BreakBubbleBookSchema).min(2).max(2),
+});
+type BooksOnly = z.infer<typeof BooksOnlySchema>;
+
+// Models — configurable via env, defaults tuned for cost/quality balance:
+//   Stage 1 needs vision → VL-Max
+//   Stage 2/Critique need text reasoning → Max-Latest (Qwen's strongest)
+const STAGE1_MODEL = process.env.STAGE1_MODEL || 'qwen-vl-max';
+const STAGE2_MODEL = process.env.STAGE2_MODEL || 'qwen-max-latest';
+const CRITIQUE_MODEL = process.env.CRITIQUE_MODEL || 'qwen-max-latest';
+
 const SLOT_LABEL: Record<number, string> = {
   0: '共鸣 #1【陪伴】— 接住情绪 / 文学性强 / 不教导',
   1: '共鸣 #2【陪伴】— 与 #1 不同的角度，仍是陪伴',
@@ -123,6 +143,67 @@ const MBTI_HINTS: Record<string, string> = {
   ESTJ: '执行力强+怕无序+把效率当美德。需要让 ta 看到低效中诞生的伟大。\n  · 定锚池：Robert Caro、Ron Chernow、John McPhee、Atul Gawande、Marcus Aurelius\n  · 味道：长时间的耐心、案例的密度、看见结构',
   ESTP: '行动派+怕反思+把痛苦外化。需要让 ta 在故事里看到自己的镜像。\n  · 定锚池：Hemingway、Cormac McCarthy、Bruce Chatwin、Hunter S. Thompson、Anthony Bourdain\n  · 味道：在路上、肉身的语言、被故事而非道理打动',
 };
+
+/**
+ * Stage 1: Signal extraction (vision + text → deep_read).
+ * Compact prompt, no recommendation rules. VL-Max focuses on what it's good at.
+ */
+function buildStage1Prompt(opts: { mbtiHint?: string; ageHint?: string }): string {
+  const profileLines: string[] = [];
+  if (opts.mbtiHint) profileLines.push(`**MBTI**：${opts.mbtiHint}`);
+  if (opts.ageHint) profileLines.push(`**人生阶段**：${opts.ageHint}`);
+  const profileBlock = profileLines.length
+    ? `\n────────── ta 的画像 ──────────\n${profileLines.join('\n')}\n`
+    : '';
+
+  return `你是「逢书」的信号提取员。看 ta 的输入（文字 + 图片），抽出深层信号。
+${profileBlock}
+
+══════════════════════════════════════════════════════════
+深读原则
+══════════════════════════════════════════════════════════
+
+每个表达都不止字面意思——回应深层那个 ta，不是表面那个。
+例：ta 写"焦虑睡不着" → 深层可能是"白天的我和夜里的我越来越像两个人"。
+
+══════════════════════════════════════════════════════════
+特别注意 media_hints（这是下游推荐的关键驱动信号）
+══════════════════════════════════════════════════════════
+
+抽取 ta 接触的具体媒体内容，分类放入：
+- music: 歌曲/歌手/专辑名
+- videos: B 站/YouTube/抖音视频名 / 公众号文章 / 电影 / 纪录片 / 课程
+- other: 思想者/概念/书单/公众人物等其他文化提示
+
+**特别要抓 ta 在二手消化的思想者/概念**——例如：
+- "B 站荣格视频"、"海德格尔解读视频"、"心理学博主"
+- "纪录片《XXX》"、"X 老师讲 Y"
+- 这是下游"破茧 #1 源头优先"的核心触发器
+
+══════════════════════════════════════════════════════════
+输出 JSON（只输出 deep_read，无其他字段）
+══════════════════════════════════════════════════════════
+
+不要 markdown 代码块，直接 JSON：
+{
+  "deep_read": {
+    "theme": "<具体主题词，如 过渡/失去/重建/倦怠/身份重塑/独处>",
+    "theme_evidence": "<ta 输入哪句/哪图推出来的>",
+    "surface_emotion": "<ta 自己能描述的情绪>",
+    "hidden_emotion": "<ta 没说但你闻到的>",
+    "hidden_need": "be_understood" | "be_disrupted" | "be_accompanied" | "be_awakened" | "be_held",
+    "tension_locus": "intimate" | "work" | "self" | "aging" | "identity" | "economic",
+    "mbti_alignment": "aligned" | "mild_drift" | "strong_conflict",
+    "conflict_note": "<不是 aligned 时填，1 句描述如何偏离>",
+    "cultural_signals": ["文化圈或品味校准词，如 中文文学读者 / 心理学好奇者"],
+    "media_hints": {
+      "music": ["..."],
+      "videos": ["..."],
+      "other": ["..."]
+    }
+  }
+}`;
+}
 
 function buildSystemPrompt(opts: {
   mbtiHint?: string;
@@ -369,31 +450,16 @@ deep_read 是内部信号——MBTI / 年龄 / theme / hidden_need 这些标签
 - 不要"亲爱的读者"这种 AI 腔，不谄媚。`;
 }
 
-const JSON_FORMAT_INSTRUCTION = `
+// Stage 2 输出格式：mood_summary + 5 books, NO deep_read（已经在 Stage 1 抽过）
+const JSON_FORMAT_BOOKS_ONLY = `
 
 ══════════════════════════════════════════════════════════
 输出 JSON 格式（严格遵守）
 ══════════════════════════════════════════════════════════
 
-不要 markdown 代码块包裹，不要任何额外解释，整个回复只有一个 JSON 对象：
+不要 markdown 代码块，整个回复只有一个 JSON 对象：
 
 {
-  "deep_read": {
-    "theme": "<具体主题词，如 过渡/失去/重建/倦怠>",
-    "theme_evidence": "<ta 输入里哪句/哪图推出来的>",
-    "surface_emotion": "<ta 自己能描述的情绪>",
-    "hidden_emotion": "<ta 没说但你闻到的>",
-    "hidden_need": "be_understood" | "be_disrupted" | "be_accompanied" | "be_awakened" | "be_held",
-    "tension_locus": "intimate" | "work" | "self" | "aging" | "identity" | "economic",
-    "mbti_alignment": "aligned" | "mild_drift" | "strong_conflict",
-    "conflict_note": "<如果不是 aligned，1 句描述如何偏离 baseline>",
-    "cultural_signals": ["文化圈或品味校准词"],
-    "media_hints": {
-      "music": ["..."],
-      "videos": ["..."],
-      "other": ["..."]
-    }
-  },
   "mood_summary": "1-2 句像老朋友说给 ta 听。不要标签话/分析腔。可以引用 ta 的原话片段（短）。如果 ta 明显反常（mbti_alignment != aligned），用朋友的话说：'你今晚不像平时的你'，绝不说 'baseline 偏离'",
   "resonance": [
     {
@@ -402,26 +468,83 @@ const JSON_FORMAT_INSTRUCTION = `
       "author_note": "作者一句话身份：国籍·身份·年代",
       "language": "原文语言",
       "category": "品类",
-      "why": "2-3 句老朋友口吻。引用 ta 的具体话或场景，把书里相通的瞬间说出来。**绝不出现** MBTI / 年龄阶段 / theme / hidden_need 任何标签词",
+      "why": "2-3 句老朋友口吻。引用 ta 的具体话或场景。**绝不出现** MBTI / 年龄阶段 / theme / hidden_need 任何标签词",
       "hook": "一句最钩人的话/金句/情节钩子",
       "mood_match": "一句朋友话，说这本和 ta 此刻在哪相通"
     }
-    // 共 3 本，前 2 本陪伴 + 第 3 本桥梁
+    // 共 3 本：前 2 本陪伴 + 第 3 本桥梁（literary nonfiction）
   ],
   "break_bubble": [
     {
-      "title": "...",
-      "author": "...",
-      "author_note": "...",
-      "language": "...",
-      "category": "...",
-      "why": "2-3 句朋友口吻。说为什么这本可能让 ta 一开始抗拒、但读进去会被打开。**绝不**出现 MBTI / 池 / theme 这些词",
+      "title": "...", "author": "...", "author_note": "...",
+      "language": "...", "category": "...",
+      "why": "2-3 句朋友口吻。**绝不**出现 MBTI / 池 / theme 这些词",
       "hook": "...",
-      "breaks_from": "一句朋友话说这本打开 ta 哪一面（不报告'品类茧房/文化圈茧房'这种框架词）"
+      "breaks_from": "一句朋友话说这本打开 ta 哪一面"
     }
-    // 共 2 本：第 1 源头破 + 第 2 文化体裁破
+    // 共 2 本：第 1 思想出口 + 第 2 经验出口
   ]
 }`;
+
+/**
+ * Critique prompt: takes deep_read + 5 books, validates against rules,
+ * outputs FINAL books (fixed if needed, original if all-pass).
+ */
+function buildCritiquePrompt(opts: { mbtiHint?: string; ageHint?: string }): string {
+  const taste = opts.mbtiHint || '（未提供）';
+  return `你是「逢书」的质量审核 + 修订员。
+
+ta 的画像：
+${taste}
+
+══════════════════════════════════════════════════════════
+检查 6 条规则
+══════════════════════════════════════════════════════════
+
+收到的输入是 (deep_read + 当前 5 本书)。逐条检查：
+
+1. **类型多样性**：5 本里 **≥ 1 本非纯文学**？
+   合格的非文学：历史 / 哲学 / 科普 / 社科 / 纪实 / 传记 / 写作技艺 / 自然志（如 Robert Caro / Annie Dillard / Jung 自传 / Joan Didion 回忆录）
+   → 不合格 = 5 本全是小说+散文+诗
+
+2. **源头优先**：deep_read.media_hints.videos / other 里有思想者/概念？
+   破茧 #1 必须是那本第一手原典。
+   - "B 站荣格视频" → 破茧 #1 必须是 Jung《回忆·梦·思考》或类似 Jung 原典
+   - "海德格尔解读视频" → 破茧 #1 必须是 Heidegger《存在与时间》或精选
+   - "X 怎么读 Y" → 破茧 #1 必须是 Y 的原著
+   → 没对应 = 不合格
+
+3. **黑名单**：5 本里是否有以下书？有 = 不合格：
+   - 自助/心理：被讨厌的勇气、Hollis《中年之路》、《菊与刀》、《非暴力沟通》、《自卑与超越》
+   - 神级滥推：百年孤独、活着、《我与地坛》、小王子、月亮与六便士、村上《挪威的森林》《海边卡夫卡》《1Q84》、卡尔维诺《看不见的城市》、毛姆《刀锋》《人性的枷锁》
+   - 文青套餐：罗兰·巴特《恋人絮语》、Ernaux《年月》《悠悠岁月》、伯格《观看之道》、辛波斯卡《万物静默如谜》、韩炳哲《倦怠社会》、加缪《局外人》《西西弗神话》、茨威格《人类群星》、黑塞《悉达多》《荒原狼》、昆德拉《不能承受的生命之轻》
+   - 流行治愈：巴克曼《欧维》《外婆的道歉信》《焦虑的人》、《岛上书店》、《追风筝的人》《灿烂千阳》、《偷影子的人》、阿连德《幽灵之家》、东野圭吾《解忧杂货店》《白夜行》
+   - 国内青春：郭敬明全部、安妮宝贝/庆山、张嘉佳、刘同
+   - 畅销盘点：人类简史、未来简史、原子习惯、纳瓦尔宝典、《如何阅读一本书》、《思考快与慢》
+
+4. **通用书测试**：是否有"任何 MBTI 都觉得懂我"的 generic 书？这种 = 不合格
+
+5. **作者重复**：5 本是否有同一作者出现 2 次？是 = 不合格
+
+6. **MBTI 味道一致**：5 本是否都在 ta 的味道里（按上面"味道"那行描述）？严重偏离 = 不合格
+
+══════════════════════════════════════════════════════════
+输出动作
+══════════════════════════════════════════════════════════
+
+- **任意一条不合格** → 直接输出修订版的完整 5 本（修复违规的那 1-2 本，其他保留）
+- **全部通过** → 原样输出收到的 5 本
+
+无论哪种，输出格式都是完整的 BooksOnly JSON：
+
+{
+  "mood_summary": "<原 mood_summary 或微调>",
+  "resonance": [...3 本...],
+  "break_bubble": [...2 本...]
+}
+
+不要 markdown 代码块。不要解释为什么修订（用户看不到）。直接输出最终 5 本。`;
+}
 
 const MAX_RETRY = 2;
 
@@ -586,7 +709,10 @@ export async function POST(req: Request) {
     const mbtiUpper = mbti.toUpperCase();
     const mbtiHint = MBTI_HINTS[mbtiUpper] ? `${mbtiUpper}——${MBTI_HINTS[mbtiUpper]}` : '';
     const ageHint = AGE_HINTS[age] ? `${age}——${AGE_HINTS[age]}` : '';
-    const SYSTEM_PROMPT = buildSystemPrompt({ mbtiHint, ageHint }) + JSON_FORMAT_INSTRUCTION;
+
+    const STAGE1_PROMPT = buildStage1Prompt({ mbtiHint, ageHint });
+    const STAGE2_PROMPT = buildSystemPrompt({ mbtiHint, ageHint }) + JSON_FORMAT_BOOKS_ONLY;
+    const CRITIQUE_PROMPT = buildCritiquePrompt({ mbtiHint, ageHint }) + JSON_FORMAT_BOOKS_ONLY;
 
     const images: LLMImage[] = await Promise.all(
       imageFiles.map(async (file) => ({
@@ -604,26 +730,84 @@ export async function POST(req: Request) {
         };
 
         try {
-          // ── 1) Initial recommendation ──
+          let totalCost = 0;
+
+          // ── Stage 1: VL-Max extracts deep_read from text + images ──
           send({ type: 'stage', stage: 'thinking' });
-          const initial = await callLLM({
-            systemPrompt: SYSTEM_PROMPT,
+          const stage1Out = await callLLM({
+            systemPrompt: STAGE1_PROMPT,
             userText,
             images,
-            temperature: 0.85, // sweet spot for Qwen: enough diversity without ignoring instructions
+            model: STAGE1_MODEL,
+            temperature: 0.5, // signal extraction wants stability, not creativity
             abortSignal: req.signal,
           });
+          totalCost += stage1Out.cost_usd ?? 0;
+          const deepReadParsed = DeepReadOnlySchema.parse(extractJson(stage1Out.text));
+          const deepRead = deepReadParsed.deep_read;
 
-          const parsed = extractJson(initial.text);
-          const validated: Recommendation = RecommendationSchema.parse(parsed);
+          // ── Stage 2: Max-Latest writes 5 books based on deep_read ──
+          send({ type: 'stage', stage: 'thinking' });
+          const stage2UserText = `这是已经抽出来的 ta 的深层信号 (deep_read)：
+
+${JSON.stringify(deepRead, null, 2)}
+
+ta 的原始输入：
+${userText}
+
+按你的所有规则推 5 本书（3 共鸣 + 2 破茧），输出 BooksOnly JSON。`;
+
+          const stage2Out = await callLLM({
+            systemPrompt: STAGE2_PROMPT,
+            userText: stage2UserText,
+            images: [], // text-only stage
+            model: STAGE2_MODEL,
+            temperature: 0.85,
+            abortSignal: req.signal,
+          });
+          totalCost += stage2Out.cost_usd ?? 0;
+          let booksValidated: BooksOnly = BooksOnlySchema.parse(extractJson(stage2Out.text));
+
+          // ── Stage 3 (B): Critique pass — Max-Latest checks rules + fixes if needed ──
+          send({ type: 'stage', stage: 'thinking' });
+          const critiqueUserText = `已抽出的 deep_read：
+${JSON.stringify(deepRead, null, 2)}
+
+当前推荐的 5 本书：
+${JSON.stringify(booksValidated, null, 2)}
+
+按 6 条规则检查。若有违反 → 输出修订版完整 5 本（修复违规的，其他保留）。若全通过 → 原样输出。`;
+
+          try {
+            const critiqueOut = await callLLM({
+              systemPrompt: CRITIQUE_PROMPT,
+              userText: critiqueUserText,
+              images: [],
+              model: CRITIQUE_MODEL,
+              temperature: 0.5, // critique wants stability
+              abortSignal: req.signal,
+            });
+            totalCost += critiqueOut.cost_usd ?? 0;
+            booksValidated = BooksOnlySchema.parse(extractJson(critiqueOut.text));
+          } catch (critiqueErr) {
+            // Critique failure is non-fatal — fall back to Stage 2 output
+            console.warn('[critique] failed, using stage 2 output:', critiqueErr);
+          }
+
+          // Re-assemble validated structure for downstream verify
+          const validated: Recommendation = {
+            deep_read: deepRead,
+            mood_summary: booksValidated.mood_summary,
+            resonance: booksValidated.resonance,
+            break_bubble: booksValidated.break_bubble,
+          };
           const books = flatten(validated);
-          let totalCost = initial.cost_usd ?? 0;
 
-          // ── 2) Verify on douban ──
+          // ── Verify on douban ──
           send({ type: 'stage', stage: 'verifying' });
           let verified = await verifyMany(books);
 
-          // ── 3) Retry loop ──
+          // ── Retry loop (uses Stage 2 model for replacements) ──
           let retryRound = 0;
           while (retryRound < MAX_RETRY) {
             const failed = verified
@@ -639,9 +823,10 @@ export async function POST(req: Request) {
             const replacementText = buildReplacementUserText(failed, okBooks);
 
             const replyOut = await callLLM({
-              systemPrompt: SYSTEM_PROMPT,
+              systemPrompt: STAGE2_PROMPT,
               userText: replacementText,
               images: [],
+              model: STAGE2_MODEL,
               temperature: 0.9,
               abortSignal: req.signal,
             });
@@ -666,7 +851,7 @@ export async function POST(req: Request) {
             }
           }
 
-          // ── 4) Re-assemble & emit final ──
+          // ── Re-assemble & emit final ──
           const augmentedResonance = books.slice(0, 3).map((b, i) => ({
             ...(b as ResonanceBook),
             douban: verified[i],
@@ -679,12 +864,13 @@ export async function POST(req: Request) {
           send({
             type: 'result',
             data: {
+              deep_read: validated.deep_read,
               mood_summary: validated.mood_summary,
               resonance: augmentedResonance,
               break_bubble: augmentedBreak,
               _meta: {
                 cost_usd: totalCost,
-                model: getModel(),
+                model: `${STAGE1_MODEL}+${STAGE2_MODEL}+critique`,
                 retry_rounds: retryRound,
                 unverified_count: verified.filter((v) => !isOk(v)).length,
               },
