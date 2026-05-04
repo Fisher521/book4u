@@ -73,6 +73,57 @@ export const RECENT_BOOKS: RecentBook[] = [
     taste: 'INFJ / INFP / ENFJ',
     note: '台湾作家。同志中年人对父辈与逝去恋人的双重凝视。',
   },
+
+  // ── 2024 末 / 2025 ────────────────────────────────────────
+  {
+    title: '城与不确定性的墙',
+    original_title: '街とその不確かな壁',
+    author: '村上春树',
+    year: 2024,
+    taste: 'INFJ / INFP / INTP',
+    note: '村上时隔六年长篇。重写 1980 年中篇。图书馆、影子、被墙围住的城。',
+  },
+  {
+    title: '不间断的人',
+    author: '双雪涛',
+    year: 2024,
+    taste: 'INTP / ENTP / ENFP',
+    note: '东北叙事新作。比《飞行家》更黑色更荒诞，男人在中年的断裂里继续走。',
+  },
+  {
+    title: '温柔的讲述者',
+    original_title: 'Czuły narrator',
+    author: 'Olga Tokarczuk',
+    year: 2024,
+    taste: 'INFJ / INTJ / INFP',
+    note: '托卡尔丘克诺奖演讲与散文集中译。第四人称、共情视角的文学宣言。',
+  },
+  {
+    title: 'Wrong Norma',
+    author: 'Anne Carson',
+    year: 2024,
+    taste: 'INFP / INFJ / ENTP',
+    note: '碎片诗与散文。十年来最 Carson 的 Carson——荷马、当代、失眠并置。',
+  },
+  {
+    title: 'Things in Nature Merely Grow',
+    author: 'Yiyun Li',
+    year: 2025,
+    taste: 'INFJ / INFP / ISFJ',
+    note: '李翊云回忆录。两个儿子相继自杀后写的。沉默、植物、不解释的悲伤。',
+  },
+  {
+    title: 'The Emperor of Gladness',
+    author: 'Ocean Vuong',
+    year: 2025,
+    taste: 'INFP / INFJ / ENFP',
+    note: 'Vuong 第二部长篇。康涅狄格小镇、跨代孤独、阿片危机。诗的语言写小说。',
+  },
+
+  // ── 2026 ──────────────────────────────────────────────────
+  // 训练 cutoff 限制：2026 新书我（Claude）只能识别零星预告，
+  // 直接列出来风险很大（可能推一本豆瓣根本没有的书 → 校验 fail → 重试浪费）。
+  // 你（Fisher）若读到/听说 2026 新书，确认豆瓣已收录后再 append 到这里。
 ];
 
 /**
