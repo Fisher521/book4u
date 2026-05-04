@@ -440,33 +440,41 @@ function SaveButton() {
       setBusy(false);
       return;
     }
-    // Hide post-actions during capture so the saved image is clean
+    // Hide post-actions and the deep-read collapsible body so the saved image is clean
     const actions = document.querySelector('.post-actions') as HTMLElement | null;
-    const prevVis = actions ? actions.style.visibility : '';
+    const drBody = document.querySelector('.deep-read-body') as HTMLElement | null;
+    const drToggle = document.querySelector('.deep-read-toggle') as HTMLElement | null;
+    const prevActionsVis = actions?.style.visibility ?? '';
+    const prevDrToggleDisp = drToggle?.style.display ?? '';
     if (actions) actions.style.visibility = 'hidden';
+    if (drToggle) drToggle.style.display = 'none';
+
     try {
-      const html2canvas = (await import('html2canvas-pro')).default;
-      const paperColor =
-        getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() || '#faf6ec';
-      const canvas = await html2canvas(target, {
-        backgroundColor: paperColor,
+      const { domToPng } = await import('modern-screenshot');
+      // Hardcode warm-paper background so the screenshot looks light
+      // regardless of viewer's system theme. Matches --paper light value.
+      const dataUrl = await domToPng(target, {
+        backgroundColor: '#f8f4ea',
         scale: 2,
-        useCORS: true,
-        logging: false,
+        // wait for cover images proxied by /api/cover
+        fetch: { requestInit: { cache: 'force-cache' } },
       });
       const link = document.createElement('a');
       link.download = `逢书-${new Date().toISOString().slice(0, 10)}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = dataUrl;
       link.click();
       setFeedback('已保存到下载');
     } catch (err) {
-      console.error(err);
-      setFeedback('保存失败');
+      console.error('[save]', err);
+      setFeedback('保存失败 ' + (err instanceof Error ? `(${err.message.slice(0, 30)})` : ''));
     } finally {
-      if (actions) actions.style.visibility = prevVis;
+      if (actions) actions.style.visibility = prevActionsVis;
+      if (drToggle) drToggle.style.display = prevDrToggleDisp;
       setBusy(false);
-      setTimeout(() => setFeedback(null), 2000);
+      setTimeout(() => setFeedback(null), 3000);
     }
+    // Hint about drBody to satisfy TS unused-var; deep-read body might be hidden via collapsed state already
+    void drBody;
   }
 
   return (
@@ -485,24 +493,35 @@ function ShareButton({ data }: { data: Recommendation }) {
   async function share() {
     const text = buildShareText(data);
     const url = typeof window !== 'undefined' ? window.location.href : 'https://book4u-khaki.vercel.app';
-    // Try Web Share API first (mobile native share — WeChat needs a url field, not text-only)
+
+    // Try Web Share API first (mobile native share)
+    let shareTried = false;
     if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      shareTried = true;
       try {
-        await navigator.share({ title: '逢书 · 此刻给你的几本书', text, url });
+        // Some platforms (WeChat in-app browser) reject text-with-url payloads silently.
+        // Try url-only first (more compatible), then text+url as fallback.
+        await navigator.share({ title: '逢书 · 此刻给你的几本书', url });
+        setFeedback('已分享');
+        setTimeout(() => setFeedback(null), 2000);
         return;
       } catch (err) {
-        if ((err as Error).name === 'AbortError') return;
+        const name = (err as Error).name;
+        if (name === 'AbortError') return; // user cancelled, no fallback
+        console.warn('[share] navigator.share failed:', err);
         // fall through to clipboard
       }
     }
+
     // Fallback: clipboard
     try {
       await navigator.clipboard.writeText(text + '\n\n' + url);
-      setFeedback('已复制到剪贴板');
-      setTimeout(() => setFeedback(null), 2000);
-    } catch {
-      setFeedback('请手动复制');
-      setTimeout(() => setFeedback(null), 2000);
+      setFeedback(shareTried ? '分享受限，已复制到剪贴板' : '已复制到剪贴板');
+      setTimeout(() => setFeedback(null), 2500);
+    } catch (err) {
+      console.error('[share] clipboard failed:', err);
+      setFeedback('请手动复制 URL');
+      setTimeout(() => setFeedback(null), 3000);
     }
   }
 
