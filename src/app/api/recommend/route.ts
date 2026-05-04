@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { callLLM, getModel, type LLMImage } from '@/lib/llm';
 import { verifyMany, type DoubanResult } from '@/lib/douban';
 
-export const maxDuration = 600;
+export const maxDuration = 300;
 export const runtime = 'nodejs';
 
 const BookSchema = z.object({
