@@ -274,6 +274,59 @@ deep_read 必填字段：
 3. 5 本作者**全 ≤ 30 岁 OR 全 ≥ 60 岁 OR 全在某个池里** → 视野太窄，替换 1-2 本
 
 ══════════════════════════════════════════════════════════
+完整示例（照这个结构和质量做）
+══════════════════════════════════════════════════════════
+
+【输入】
+MBTI: INFJ ｜ 人生阶段: 36-45
+自由文本: "最近心碎得睡不着，总想起一个走了的人。白天还得开会。B 站缓存了好多荣格的视频但没看完。"
+图片: 无
+
+【输出 JSON 应该长这样】
+
+deep_read:
+  theme: "丧失"
+  theme_evidence: "ta 写'走了的人'+'睡不着'+缓存 Jung 视频但没看"
+  surface_emotion: "心碎+疲惫"
+  hidden_emotion: "对自己仍被卷入感到羞愧，想用理性盖住但盖不住"
+  hidden_need: "be_understood"
+  tension_locus: "intimate"
+  mbti_alignment: "aligned"
+  cultural_signals: "中文文学读者+心理学好奇者"
+  media_hints: "B 站荣格视频（未看完，二手消化中）"
+
+mood_summary: "你这几天像两个人——白天撑着开完会，夜里撑不住。缓存了 Jung 但没点开，像把'我应该懂自己'又往后推了一步。"
+
+共鸣 #1: 《Gilead》Marilynne Robinson · 美国小说家
+  hook: "我在写信给一个我永远不会见到老的人。"
+  why: "父亲临终给儿子的信，那种沉静长句子的味道。不是治愈，是让你知道'撑着也是一种活法'。"
+
+共鸣 #2: 《Where Reasons End》Yiyun Li · 美籍华裔
+  hook: "你不能说'我懂了'，因为这件事还在继续。"
+  why: "母亲跟去世儿子的虚拟对话，极克制。比纯小说更接近你夜里那个状态。"
+
+共鸣 #3 (思想桥梁): 《The Year of Magical Thinking》Joan Didion · 文学回忆录
+  hook: "我以为我会哭，结果我开始整理他的鞋。"
+  why: "Didion 用记者式的冷静分析自己丧夫第一年的所有疯念头。给你白天那个开会的脑子一个出口——原来悲伤会让人这样。"
+
+破茧 #1 (思想出口·源头优先): 《回忆·梦·思考》Carl Jung · 自传
+  hook: "中年是从外部世界转向内在的时刻。"
+  why: "你 B 站缓存了 Jung 但没看——这本是他自己写的。不是博主二手解读，是 Jung 八十岁回看一生的笔记。读 1 章顶 10 个视频。"
+
+破茧 #2 (经验出口): 《燕子呢喃，白鹤鸣叫》阮夕清 · 中国当代散文
+  hook: "我父亲走的那天，院子里的燕子飞得特别低。"
+  why: "中国当代写父辈与失去，跟你的语境近，但语调完全不同——没有西方那种'治愈叙事'，是'记住就好'。"
+
+【自检通过】
+- 类型: 4 文学 + 1 自传 ✓ (非纯文学 ≥ 1)
+- media_hints (Jung) → 破茧 #1 是 Jung 原典 ✓
+- 作者年龄/池子分布: Robinson/Li/Didion/Jung/阮夕清 跨年代跨文化 ✓
+- MBTI 味道: 5 本都在 INFJ 沉静/记忆/不教导的光谱 ✓
+- 黑名单: 无中招 ✓
+
+——照这个结构、深度、文风做你的输出。
+
+══════════════════════════════════════════════════════════
 两道硬筛（每候选都过）
 ══════════════════════════════════════════════════════════
 
@@ -557,7 +610,7 @@ export async function POST(req: Request) {
             systemPrompt: SYSTEM_PROMPT,
             userText,
             images,
-            temperature: 1.0, // raised for diversity — works with the MBTI anchor pool to balance variation + signature
+            temperature: 0.85, // sweet spot for Qwen: enough diversity without ignoring instructions
             abortSignal: req.signal,
           });
 
