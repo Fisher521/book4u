@@ -71,23 +71,28 @@ const TAGS = [
   // years
   '2024', '2025', '2026',
   // big buckets
-  '小说', '文学', '随笔', '散文', '诗歌',
+  '小说', '文学', '随笔', '散文', '诗歌', '短篇小说', '长篇小说',
   // foreign lit by region
   '外国文学', '日本文学', '韩国文学', '英国文学', '美国文学', '法国文学', '德国文学', '俄罗斯文学',
+  '拉美文学', '北欧文学', '南美文学', '东南亚文学',
   // chinese lit splits
-  '中国文学', '中国当代', '台湾文学', '港台',
+  '中国文学', '中国当代', '当代文学', '台湾文学', '香港文学', '港台',
   // genre fiction
-  '推理', '悬疑', '科幻', '奇幻', '言情',
+  '推理', '悬疑', '科幻', '奇幻', '言情', '惊悚', '武侠', '玄幻',
   // non-fiction
-  '历史', '哲学', '心理学', '社会', '纪实', '传记', '回忆录',
+  '历史', '哲学', '心理学', '社会学', '社会', '纪实', '传记', '回忆录',
+  '人类学', '政治', '宗教', '文化',
   // life
-  '女性', '成长', '教育', '艺术', '设计', '建筑',
+  '女性', '成长', '教育', '育儿', '艺术', '设计', '建筑',
+  '美食', '旅行', '自然', '博物', '健康',
   // pop/biz
-  '商业', '经济', '管理', '科普',
+  '商业', '经济', '管理', '科普', '互联网', '科技',
   // visual
-  '漫画', '绘本',
+  '漫画', '绘本', '摄影',
+  // craft
+  '写作', '电影', '音乐', '戏剧',
 ];
-const PAGES_PER_TAG = 12; // 240 per tag max
+const PAGES_PER_TAG = 15; // 300 per tag max
 
 const all = [];
 for (const tag of TAGS) {
@@ -104,11 +109,11 @@ for (const b of all) {
 }
 const dedup = [...byUrl.values()];
 
-// Filter: pub year in 2024-2026, rating >= 7.5, votes >= 100 (lower for more breadth)
+// Filter: pub year 2024-2026, rating >= 7.3, votes >= 50 (loosened for more breadth)
 const filtered = dedup
   .filter((b) => b.year && b.year >= 2024 && b.year <= 2026)
-  .filter((b) => b.rating && b.rating >= 7.5)
-  .filter((b) => b.votes >= 100)
+  .filter((b) => b.rating && b.rating >= 7.3)
+  .filter((b) => b.votes >= 50)
   .sort((a, b) => b.votes - a.votes);
 
 process.stderr.write(`\nDedup: ${dedup.length} → filtered (2024-2026, ≥7.5, ≥200 votes): ${filtered.length}\n\n`);
