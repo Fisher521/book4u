@@ -518,7 +518,10 @@ function ShareButton({ data }: { data: Recommendation }) {
 
   async function share() {
     const text = buildShareText(data);
-    const url = typeof window !== 'undefined' ? window.location.href : 'https://book4u-khaki.vercel.app';
+    const url =
+      typeof window !== 'undefined'
+        ? window.location.href
+        : process.env.NEXT_PUBLIC_SITE_URL || '';
 
     // Try Web Share API first (mobile native share)
     let shareTried = false;

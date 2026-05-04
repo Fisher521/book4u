@@ -1,9 +1,6 @@
 /**
- * Unified LLM caller. Toggles between Qwen-VL (DashScope) and Claude (Agent SDK).
- * Selected via MODEL env var. Default: qwen-vl-max.
+ * Qwen-VL (DashScope) LLM caller. Selected via MODEL env var. Default: qwen-vl-max.
  */
-
-import { query } from '@anthropic-ai/claude-agent-sdk';
 
 export type LLMImage = { mediaType: string; base64: string };
 
@@ -100,68 +97,8 @@ async function callQwen(input: LLMInput): Promise<LLMOutput> {
   return { text, model: modelName, cost_usd: cost };
 }
 
-async function callClaude(input: LLMInput): Promise<LLMOutput> {
-  const imageBlocks = input.images.map((img) => ({
-    type: 'image' as const,
-    source: {
-      type: 'base64' as const,
-      media_type: img.mediaType,
-      data: img.base64,
-    },
-  }));
-
-  const content = [{ type: 'text' as const, text: input.userText }, ...imageBlocks];
-
-  async function* userPrompt() {
-    yield {
-      type: 'user' as const,
-      message: {
-        role: 'user' as const,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        content: content as any,
-      },
-      parent_tool_use_id: null,
-      session_id: '',
-    };
-  }
-
-  const abortController = new AbortController();
-  if (input.abortSignal) {
-    input.abortSignal.addEventListener('abort', () => abortController.abort());
-  }
-
-  const q = query({
-    prompt: userPrompt(),
-    options: {
-      model: MODEL,
-      systemPrompt: input.systemPrompt,
-      tools: [],
-      maxTurns: 1,
-      permissionMode: 'bypassPermissions',
-      extraArgs: { 'dangerously-skip-permissions': null },
-      abortController,
-    },
-  });
-
-  let text = '';
-  let cost: number | undefined;
-  for await (const msg of q) {
-    if (msg.type === 'result') {
-      if (msg.subtype === 'success') {
-        text = msg.result;
-        cost = msg.total_cost_usd;
-      } else {
-        throw new Error(`Claude 调用失败：${JSON.stringify(msg).slice(0, 300)}`);
-      }
-    }
-  }
-  if (!text) throw new Error('Claude 返回空内容');
-  return { text, model: MODEL, cost_usd: cost };
-}
-
 export async function callLLM(input: LLMInput): Promise<LLMOutput> {
   const model = input.model ?? MODEL;
   if (model.startsWith('qwen')) return callQwen(input);
-  if (model.startsWith('claude')) return callClaude(input);
-  throw new Error(`不支持的 MODEL: ${model}（支持 qwen-* 或 claude-*）`);
+  throw new Error(`不支持的 MODEL: ${model}（仅支持 qwen-*）`);
 }
