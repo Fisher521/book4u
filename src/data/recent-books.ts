@@ -32,7 +32,7 @@ export const RECENT_BOOKS: RecentBook[] = [
     note: '诺奖后中译。济州 4·3 事件的伤痕，白色与雪的语言。沉痛但克制。',
   },
   {
-    title: 'Intermezzo（中场）',
+    title: 'Intermezzo',
     author: 'Sally Rooney',
     year: 2024,
     taste: 'INFP / ENFP / INFJ',
@@ -60,13 +60,6 @@ export const RECENT_BOOKS: RecentBook[] = [
     note: '布克奖入围。战后荷兰，房子、记忆、隐藏的身份。慢热得惊艳。',
   },
   {
-    title: '青春期猫',
-    author: '塞壬',
-    year: 2024,
-    taste: 'INFP / ENFP / ISFP',
-    note: '中国当代散文家。打工女性视角的诚实自传，肉身与时代。',
-  },
-  {
     title: '断代',
     author: '郭强生',
     year: 2024,
@@ -76,7 +69,7 @@ export const RECENT_BOOKS: RecentBook[] = [
 
   // ── 2024 末 / 2025 ────────────────────────────────────────
   {
-    title: '城与不确定性的墙',
+    title: '小城与不确定性的墙',
     original_title: '街とその不確かな壁',
     author: '村上春树',
     year: 2024,
@@ -93,7 +86,7 @@ export const RECENT_BOOKS: RecentBook[] = [
   {
     title: '温柔的讲述者',
     original_title: 'Czuły narrator',
-    author: 'Olga Tokarczuk',
+    author: '奥尔加·托卡尔丘克 Olga Tokarczuk',
     year: 2024,
     taste: 'INFJ / INTJ / INFP',
     note: '托卡尔丘克诺奖演讲与散文集中译。第四人称、共情视角的文学宣言。',
@@ -125,13 +118,6 @@ export const RECENT_BOOKS: RecentBook[] = [
     year: 2024,
     taste: 'INFP / INFJ / INTP',
     note: '诗人首部长篇。伊朗裔美国人，戒酒、母亲被击落的航班、博物馆里的死亡艺术家。',
-  },
-  {
-    title: 'My Friends',
-    author: 'Hisham Matar',
-    year: 2024,
-    taste: 'INFJ / INFP / ENFJ',
-    note: '布克奖入围。利比亚流亡者三十年友谊，伦敦使馆门前的一颗子弹改变所有人。',
   },
   {
     title: 'Wandering Stars',
@@ -203,22 +189,8 @@ export const RECENT_BOOKS: RecentBook[] = [
     taste: 'INFP / INFJ / INTP',
     note: '一本书两面：一面回忆录，一面虚构。分手与时间结构的实验。',
   },
-  {
-    title: 'Authority',
-    author: 'Andrea Long Chu',
-    year: 2025,
-    taste: 'INTJ / INTP / ENTP',
-    note: '普利策评论奖得主首部文集。批评作为权力分析——Hanya Yanagihara、巴勒斯坦、跨性别。',
-  },
 
   // ── 非虚构 / 历史 / 社科 (24-25) ────────────────────────────
-  {
-    title: 'Challenger',
-    author: 'Adam Higginbotham',
-    year: 2024,
-    taste: 'INTJ / INTP / ENTJ',
-    note: '挑战者号失事完整调查史。NASA 决策病理、O 型环温度警告如何被官僚淹没。',
-  },
   {
     title: 'The Demon of Unrest',
     author: 'Erik Larson',
@@ -255,19 +227,11 @@ export const RECENT_BOOKS: RecentBook[] = [
     note: '哈得逊河谷某连锁商超凌晨班的群像小说。蓝领、希望、被算法管理的尊严。',
   },
 
-  // ── 法语 Nobel 中译扩充 ───────────────────────────────────
-  {
-    title: '一个女人',
-    original_title: 'Une femme',
-    author: 'Annie Ernaux',
-    year: 2023,
-    taste: 'INFJ / INFP / ISFJ',
-    note: '诺奖得主写母亲的去世。"我在写她"既是悼念也是阶级分析。中译post-Nobel 引进。',
-  },
+  // ── 法语 Nobel 中译 ───────────────────────────────────────
   {
     title: '简单的激情',
     original_title: 'Passion simple',
-    author: 'Annie Ernaux',
+    author: '安妮·埃尔诺 Annie Ernaux',
     year: 2024,
     taste: 'INFP / INFJ / ENFP',
     note: '一段不对等情事的诚实记录。Ernaux 把欲望写成社会学田野。',
