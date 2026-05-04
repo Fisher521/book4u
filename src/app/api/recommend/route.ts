@@ -347,18 +347,68 @@ const JSON_FORMAT_INSTRUCTION = `
 
 const MAX_RETRY = 2;
 
+/**
+ * Escape raw control characters (literal \n / \r / \t / etc) that appear
+ * INSIDE string literals — Qwen sometimes emits them un-escaped, which is
+ * invalid JSON. Outside strings, control chars are fine (whitespace).
+ */
+function sanitizeJsonString(s: string): string {
+  let out = '';
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (escaped) {
+      out += c;
+      escaped = false;
+      continue;
+    }
+    if (c === '\\') {
+      out += c;
+      escaped = true;
+      continue;
+    }
+    if (c === '"') {
+      inString = !inString;
+      out += c;
+      continue;
+    }
+    if (inString) {
+      const code = c.charCodeAt(0);
+      if (c === '\n') out += '\\n';
+      else if (c === '\r') out += '\\r';
+      else if (c === '\t') out += '\\t';
+      else if (code < 0x20) {
+        // strip other control chars
+      } else out += c;
+    } else {
+      out += c;
+    }
+  }
+  return out;
+}
+
+function tryParse(s: string): unknown {
+  try {
+    return JSON.parse(s);
+  } catch (e) {
+    // retry after sanitizing raw control chars inside strings
+    return JSON.parse(sanitizeJsonString(s));
+  }
+}
+
 function extractJson(raw: string): unknown {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (fenced) {
     try {
-      return JSON.parse(fenced[1]);
+      return tryParse(fenced[1]);
     } catch {
       // fall through
     }
   }
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('找不到 JSON 对象');
-  return JSON.parse(match[0]);
+  return tryParse(match[0]);
 }
 
 function flatten(rec: Recommendation): Array<ResonanceBook | BreakBubbleBook> {
