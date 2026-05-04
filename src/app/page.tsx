@@ -373,6 +373,8 @@ function Results({
       ))}
 
       <div className="post-actions">
+        <SaveButton />
+        <span className="sep">·</span>
         <ShareButton data={data} />
         <span className="sep">·</span>
         <button type="button" onClick={onReset}>再寻一次</button>
@@ -380,6 +382,57 @@ function Results({
         <button type="button" onClick={onClear}>清空</button>
       </div>
     </section>
+  );
+}
+
+function SaveButton() {
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  async function save() {
+    setBusy(true);
+    setFeedback(null);
+    const target = document.querySelector('.results') as HTMLElement | null;
+    if (!target) {
+      setBusy(false);
+      return;
+    }
+    // Hide post-actions during capture so the saved image is clean
+    const actions = document.querySelector('.post-actions') as HTMLElement | null;
+    const prevVis = actions ? actions.style.visibility : '';
+    if (actions) actions.style.visibility = 'hidden';
+    try {
+      const html2canvas = (await import('html2canvas-pro')).default;
+      const paperColor =
+        getComputedStyle(document.documentElement).getPropertyValue('--paper').trim() || '#faf6ec';
+      const canvas = await html2canvas(target, {
+        backgroundColor: paperColor,
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const link = document.createElement('a');
+      link.download = `逢书-${new Date().toISOString().slice(0, 10)}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      setFeedback('已保存到下载');
+    } catch (err) {
+      console.error(err);
+      setFeedback('保存失败');
+    } finally {
+      if (actions) actions.style.visibility = prevVis;
+      setBusy(false);
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }
+
+  return (
+    <>
+      <button type="button" onClick={save} disabled={busy}>
+        {busy ? '正在制图…' : '保存图'}
+      </button>
+      {feedback && <span className="share-feedback">{feedback}</span>}
+    </>
   );
 }
 

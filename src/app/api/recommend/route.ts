@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { callLLM, getModel, type LLMImage } from '@/lib/llm';
 import { verifyMany, type DoubanResult } from '@/lib/douban';
+import { checkRecommendLimit } from '@/lib/ratelimit';
 
 export const maxDuration = 300;
 export const runtime = 'nodejs';
@@ -56,23 +57,27 @@ const AGE_HINTS: Record<string, string> = {
 };
 
 // 16 型 MBTI 的推荐启发——告诉模型每种 ta 的隐秘需求
+/**
+ * 每种 MBTI 给一段「画像 + 作家定锚池」。
+ * 池子是味觉光谱，不是必选清单——5 本里至少 1 本必须来自池外，保证多样性。
+ */
 const MBTI_HINTS: Record<string, string> = {
-  INFJ: '深度敏感+理想主义+怕被定义。怕"被看穿但被误解"。需要"被精准接住但不被框定"的书。容易自我消耗，不要再推"更深刻"的——推让 ta 学会接受自己复杂性的、温和但有重量的同伴书。',
-  INFP: '内在世界丰富+怕妥协+对真实感极度敏感。需要"无需妥协的真"的样本——不是教 ta 妥协，是让 ta 看到不妥协也能活下去的人。',
-  INTJ: '战略思考+怕情感失控+对低效零容忍。需要把感性纳入系统的工具，或让 ta 看到理性的边界。不要推鸡汤。',
-  INTP: '思想跳跃+怕承诺+对模糊不耐。需要让 ta 在游戏里碰到真问题的书，而不是教 ta 整理。',
-  ENFJ: '过度共情+怕令人失望+自我边界模糊。需要让 ta 学会"不为他人活"的书，但不是说教式的。',
-  ENFP: '灵感跳跃+怕被困住+热情易耗尽。需要收束的勇气，但不能是"专注"那种功利书。',
-  ENTJ: '掌控欲+怕脆弱+把弱点等同失败。需要让 ta 看到"暴露脆弱也是一种力量"的非鸡汤样本。',
-  ENTP: '辩论狂+怕重复+对深度承诺有恐惧。需要让 ta 在一个问题上停留够久的书。',
-  ISFJ: '默默承担+怕变化+把责任内化为自我。需要让 ta 看到"为自己活"的样本。',
-  ISFP: '感官敏感+怕冲突+理想化关系。需要让 ta 直面冲突而不必胜出的书。',
-  ISTJ: '责任感+怕混乱+对秩序有依赖。需要让 ta 在秩序之外发现意义的书。',
-  ISTP: '动手派+怕情感纠缠+独立到孤立。需要让 ta 触到自己情感而不必处理的书。',
-  ESFJ: '社群导向+怕被排斥+自我=他人评价。需要让 ta 重新发现"我自己是谁"的书。',
-  ESFP: '当下狂欢+怕沉重+回避深度。需要让 ta 在愉悦里不知不觉碰到深度的书。',
-  ESTJ: '执行力强+怕无序+把效率当美德。需要让 ta 看到低效中诞生的伟大。',
-  ESTP: '行动派+怕反思+把痛苦外化。需要让 ta 在故事里看到自己的镜像。',
+  INFJ: '深度敏感+理想主义+怕被定义。怕"被看穿但被误解"。需要"被精准接住但不被框定"的书。\n  · 定锚池：Marilynne Robinson、William Maxwell、W.G. Sebald、黎紫书、黄灿然、Olga Tokarczuk、Anne Carson、Jhumpa Lahiri\n  · 味道：沉静、内敛、不教导、长句子、记忆与孤独并置',
+  INFP: '内在世界丰富+怕妥协+对真实感极度敏感。需要"无需妥协的真"的样本。\n  · 定锚池：Ocean Vuong、Maggie Nelson、廖一梅、Mary Oliver、Patti Smith、张悦然\n  · 味道：抒情、私人、对污秽与神圣同时敞开',
+  INTJ: '战略思考+怕情感失控+对低效零容忍。需要把感性纳入系统的工具，或让 ta 看到理性的边界。\n  · 定锚池：Robert Pirsig、Nassim Taleb、Christopher Alexander、Stanislaw Lem、Cormac McCarthy、Borges\n  · 味道：跨学科、有结构感、对复杂性诚实',
+  INTP: '思想跳跃+怕承诺+对模糊不耐。需要让 ta 在游戏里碰到真问题的书。\n  · 定锚池：Borges、Douglas Hofstadter、Stanislaw Lem、David Foster Wallace、卡尔维诺杂文（不是看不见的城市）\n  · 味道：智识游戏、自我指涉、不解决但更深',
+  ENFJ: '过度共情+怕令人失望+自我边界模糊。需要让 ta 学会"不为他人活"的书，但不是说教式的。\n  · 定锚池：Bell Hooks、Anne Lamott、Patti Smith、简媜、Mary Karr、Esther Perel\n  · 味道：外放、共情、用 sample-of-life 教学而不是规则',
+  ENFP: '灵感跳跃+怕被困住+热情易耗尽。需要收束的勇气，但不能是"专注"那种功利书。\n  · 定锚池：Ray Bradbury、三毛、Jenny Offill、Hrabal、Anne Carson、Rebecca Solnit\n  · 味道：散文式跳跃、保有诗意但能落地',
+  ENTJ: '掌控欲+怕脆弱+把弱点等同失败。需要让 ta 看到"暴露脆弱也是一种力量"。\n  · 定锚池：Ben Horowitz、Robert Caro、Ron Chernow、Atul Gawande、Marcus Aurelius\n  · 味道：传记/案例式深度、行动者的内在反省',
+  ENTP: '辩论狂+怕重复+对深度承诺有恐惧。需要让 ta 在一个问题上停留够久的书。\n  · 定锚池：Christopher Hitchens、Slavoj Žižek、Andre Aciman、Susan Sontag、Geoff Dyer\n  · 味道：思想异端、长 essay、敢自相矛盾',
+  ISFJ: '默默承担+怕变化+把责任内化为自我。需要让 ta 看到"为自己活"的样本。\n  · 定锚池：Anne Lamott、Penelope Fitzgerald、Marilynne Robinson、汪曾祺、Kent Haruf\n  · 味道：温柔但有锋、家庭与日常的肌理',
+  ISFP: '感官敏感+怕冲突+理想化关系。需要让 ta 直面冲突而不必胜出的书。\n  · 定锚池：Banana Yoshimoto、Ocean Vuong、川端康成、Anne Carson、Annie Dillard\n  · 味道：感官在场、不诉诸冲突解决',
+  ISTJ: '责任感+怕混乱+对秩序有依赖。需要让 ta 在秩序之外发现意义。\n  · 定锚池：Cormac McCarthy、Robert Caro、John McPhee、Wendell Berry、Marcus Aurelius\n  · 味道：质朴的力量、长时间的沉淀、规则之外的伦理',
+  ISTP: '动手派+怕情感纠缠+独立到孤立。需要让 ta 触到自己情感而不必处理。\n  · 定锚池：Hemingway、Cormac McCarthy、Bruce Chatwin、Tim O\'Brien、Robert Pirsig\n  · 味道：精瘦、行动中的情感、不抒情',
+  ESFJ: '社群导向+怕被排斥+自我=他人评价。需要让 ta 重新发现"我自己是谁"。\n  · 定锚池：Anne Tyler、Elizabeth Strout、Anne Lamott、汪曾祺、Mary Oliver\n  · 味道：群像中的个体、温暖里的孤立',
+  ESFP: '当下狂欢+怕沉重+回避深度。需要让 ta 在愉悦里不知不觉碰到深度。\n  · 定锚池：Kurt Vonnegut、Patti Smith、Ray Bradbury、三毛、Anthony Bourdain\n  · 味道：声音感强、好读、深意藏在欢乐底下',
+  ESTJ: '执行力强+怕无序+把效率当美德。需要让 ta 看到低效中诞生的伟大。\n  · 定锚池：Robert Caro、Ron Chernow、John McPhee、Atul Gawande、Marcus Aurelius\n  · 味道：长时间的耐心、案例的密度、看见结构',
+  ESTP: '行动派+怕反思+把痛苦外化。需要让 ta 在故事里看到自己的镜像。\n  · 定锚池：Hemingway、Cormac McCarthy、Bruce Chatwin、Hunter S. Thompson、Anthony Bourdain\n  · 味道：在路上、肉身的语言、被故事而非道理打动',
 };
 
 function buildSystemPrompt(opts: {
@@ -84,7 +89,11 @@ function buildSystemPrompt(opts: {
   if (opts.ageHint) profileLines.push(`**人生阶段**：${opts.ageHint}`);
 
   const profileBlock = profileLines.length
-    ? `\n────────── 这个 ta 的画像 ──────────\n\n${profileLines.join('\n\n')}\n\n以上不是装饰，是核心信号。推荐时必须叠合这两层。`
+    ? `\n────────── 这个 ta 的画像 ──────────\n\n${profileLines.join('\n\n')}\n\n**MBTI 是核心过滤器，不是 flavor**——
+- 把"定锚池"当作 ta 这个人格的味觉光谱（不是必选清单）
+- 5 本推荐里**必须至少 1 本来自池外**——保证每次有惊喜，不重复
+- 但池外这本的"味道"也要和池里一致（同光谱外延）
+- 绝不允许两个不同 MBTI 的用户在相似心境下拿到一样的推荐——如果你脑子里第一反应的书在多种 MBTI 上都通用，**替换**`
     : '';
 
   return `你是一个有品味、读书广博、能听到话外音的"懂 ta 的朋友"，不是 AI 客服。
@@ -259,6 +268,19 @@ ${okList || '（无）'}
 
 export async function POST(req: Request) {
   try {
+    // Rate limit: 3/24h per IP, owner cookie bypasses
+    const rl = await checkRecommendLimit(req);
+    if (!rl.ok) {
+      const resetAt = new Date(rl.reset);
+      const hours = Math.max(1, Math.ceil((rl.reset - Date.now()) / 3600_000));
+      return Response.json(
+        {
+          error: `今天的额度用完了（每天 3 次）。约 ${hours} 小时后（${resetAt.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}）刷新。`,
+        },
+        { status: 429 },
+      );
+    }
+
     const formData = await req.formData();
 
     const expression = (formData.get('expression') as string) || '';
@@ -313,7 +335,7 @@ export async function POST(req: Request) {
             systemPrompt: SYSTEM_PROMPT,
             userText,
             images,
-            temperature: 0.85,
+            temperature: 1.0, // raised for diversity — works with the MBTI anchor pool to balance variation + signature
             abortSignal: req.signal,
           });
 
