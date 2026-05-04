@@ -68,7 +68,7 @@
 
   /* — page frame — */
   .page {
-    max-width: min(680px, 92vw);
+    max-width: min(880px, 92vw);
     margin: 0 auto;
     padding: clamp(28px, 4.5vw, 64px) 0 64px;
     position: relative;
@@ -90,7 +90,7 @@
   .masthead h1 {
     font-family: var(--font-serif);
     font-weight: 400;
-    font-size: clamp(72px, 13vw, 156px);
+    font-size: clamp(64px, 9vw, 120px);
     line-height: 0.92;
     letter-spacing: -0.01em;
     margin: 0 0 0.18em;
