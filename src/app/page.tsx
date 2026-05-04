@@ -388,19 +388,20 @@ function ShareButton({ data }: { data: Recommendation }) {
 
   async function share() {
     const text = buildShareText(data);
-    // Try Web Share API first (mobile + Chrome desktop)
+    const url = typeof window !== 'undefined' ? window.location.href : 'https://book4u-khaki.vercel.app';
+    // Try Web Share API first (mobile native share — WeChat needs a url field, not text-only)
     if (typeof navigator !== 'undefined' && 'share' in navigator) {
       try {
-        await navigator.share({ title: '逢书 · 此刻给你的几本书', text });
+        await navigator.share({ title: '逢书 · 此刻给你的几本书', text, url });
         return;
       } catch (err) {
-        // User cancelled, or share unsupported for this content — fall through
         if ((err as Error).name === 'AbortError') return;
+        // fall through to clipboard
       }
     }
     // Fallback: clipboard
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(text + '\n\n' + url);
       setFeedback('已复制到剪贴板');
       setTimeout(() => setFeedback(null), 2000);
     } catch {
