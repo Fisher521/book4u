@@ -450,19 +450,35 @@ function SaveButton() {
     if (drToggle) drToggle.style.display = 'none';
 
     try {
-      const { domToPng } = await import('modern-screenshot');
-      // Hardcode warm-paper background so the screenshot looks light
-      // regardless of viewer's system theme. Matches --paper light value.
-      const dataUrl = await domToPng(target, {
+      const { domToBlob } = await import('modern-screenshot');
+      // Wait for any inline images (covers via /api/cover) to fully load
+      const imgs = Array.from(target.querySelectorAll('img'));
+      await Promise.all(
+        imgs.map((img) =>
+          img.complete && img.naturalWidth > 0
+            ? Promise.resolve()
+            : new Promise<void>((resolve) => {
+                img.addEventListener('load', () => resolve(), { once: true });
+                img.addEventListener('error', () => resolve(), { once: true });
+                // failsafe timeout
+                setTimeout(() => resolve(), 4000);
+              }),
+        ),
+      );
+      const blob = await domToBlob(target, {
         backgroundColor: '#f8f4ea',
         scale: 2,
-        // wait for cover images proxied by /api/cover
         fetch: { requestInit: { cache: 'force-cache' } },
       });
+      if (!blob) throw new Error('截图返回空');
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.download = `逢书-${new Date().toISOString().slice(0, 10)}.png`;
-      link.href = dataUrl;
+      link.href = url;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
       setFeedback('已保存到下载');
     } catch (err) {
       console.error('[save]', err);
@@ -473,17 +489,27 @@ function SaveButton() {
       setBusy(false);
       setTimeout(() => setFeedback(null), 3000);
     }
-    // Hint about drBody to satisfy TS unused-var; deep-read body might be hidden via collapsed state already
     void drBody;
   }
 
   return (
     <>
-      <button type="button" onClick={save} disabled={busy}>
-        {busy ? '正在制图…' : '保存图'}
+      <button type="button" onClick={save} disabled={busy} className="action-with-icon">
+        <SaveIcon />
+        <span>{busy ? '正在制图…' : '保存图'}</span>
       </button>
       {feedback && <span className="share-feedback">{feedback}</span>}
     </>
+  );
+}
+
+function SaveIcon() {
+  return (
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M2.5 9.5v2a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1v-2" />
+      <path d="M4.5 6.5L7 9l2.5-2.5" />
+      <path d="M7 1.5v7" />
+    </svg>
   );
 }
 
@@ -527,33 +553,47 @@ function ShareButton({ data }: { data: Recommendation }) {
 
   return (
     <>
-      <button type="button" onClick={share}>分享</button>
+      <button type="button" onClick={share} className="action-with-icon">
+        <ShareIcon />
+        <span>分享</span>
+      </button>
       {feedback && <span className="share-feedback">{feedback}</span>}
     </>
   );
 }
 
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M7 1.5v8" />
+      <path d="M4 4.5L7 1.5l3 3" />
+      <path d="M2 8.5v3a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-3" />
+    </svg>
+  );
+}
+
 function buildShareText(data: Recommendation): string {
+  // Optimized for forwarding: short, intriguing, makes friend want to click.
+  // Picks 2-3 most striking hooks (1 from each section), drops the personal mood
+  // (which doesn't translate to friend), ends with clear CTA + URL.
   const lines: string[] = [];
-  lines.push('逢书 · 此刻给你的几本书');
+  lines.push('「逢书」给我寄来一份书单');
   lines.push('');
-  lines.push(`「${data.mood_summary}」`);
-  lines.push('');
-  lines.push('— 共鸣 · 与你同频 —');
-  data.resonance.forEach((b) => {
+  // First resonance hook as opener (most relatable)
+  if (data.resonance[0]) {
+    lines.push(`《${data.resonance[0].title}》— ${data.resonance[0].author}`);
+    if (data.resonance[0].hook) lines.push(`  ${data.resonance[0].hook}`);
     lines.push('');
-    lines.push(`《${b.title}》  ${b.author}`);
-    if (b.hook) lines.push(`「${b.hook}」`);
-  });
-  lines.push('');
-  lines.push('— 破茧 · 自视野之外 —');
-  data.break_bubble.forEach((b) => {
+  }
+  // 1 from break_bubble (the "你不会主动找的") — adds intrigue
+  if (data.break_bubble[0]) {
+    lines.push(`《${data.break_bubble[0].title}》— ${data.break_bubble[0].author}`);
+    if (data.break_bubble[0].hook) lines.push(`  ${data.break_bubble[0].hook}`);
     lines.push('');
-    lines.push(`《${b.title}》  ${b.author}`);
-    if (b.hook) lines.push(`「${b.hook}」`);
-  });
+  }
+  lines.push('… 一共 5 本。');
   lines.push('');
-  lines.push('—— 由 逢书 · A Book to Meet You 寄出');
+  lines.push('告诉它你此刻的样子，它给你寄一份属于你的：');
   return lines.join('\n');
 }
 

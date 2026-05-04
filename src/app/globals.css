@@ -794,6 +794,17 @@
     color: var(--ink);
     border-bottom-color: var(--rule);
   }
+  .post-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .post-actions button.action-with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .post-actions button.action-with-icon svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
   .post-actions .sep { color: var(--rule); }
 
   .share-feedback {

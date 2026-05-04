@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { callLLM, getModel, type LLMImage } from '@/lib/llm';
 import { verifyMany, type DoubanResult } from '@/lib/douban';
 import { checkRecommendLimit } from '@/lib/ratelimit';
+import { formatRecentBooksForPrompt } from '@/data/recent-books';
 
 export const maxDuration = 300;
 export const runtime = 'nodejs';
@@ -140,6 +141,7 @@ function buildSystemPrompt(opts: {
 
   return `你是「逢书」的推荐核心——一个有品味、读书广博、能听到话外音的"懂 ta 的朋友"。
 ${profileBlock}
+${formatRecentBooksForPrompt()}
 
 ══════════════════════════════════════════════════════════
 信号优先级（核心）
