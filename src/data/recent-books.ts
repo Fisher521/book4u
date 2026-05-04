@@ -211,6 +211,68 @@ export const RECENT_BOOKS: RecentBook[] = [
     note: '普利策评论奖得主首部文集。批评作为权力分析——Hanya Yanagihara、巴勒斯坦、跨性别。',
   },
 
+  // ── 非虚构 / 历史 / 社科 (24-25) ────────────────────────────
+  {
+    title: 'Challenger',
+    author: 'Adam Higginbotham',
+    year: 2024,
+    taste: 'INTJ / INTP / ENTJ',
+    note: '挑战者号失事完整调查史。NASA 决策病理、O 型环温度警告如何被官僚淹没。',
+  },
+  {
+    title: 'The Demon of Unrest',
+    author: 'Erik Larson',
+    year: 2024,
+    taste: 'INTJ / ENTJ / ENTP',
+    note: 'Larson 写林肯就职到萨姆特堡开火那 5 个月。一个国家如何在所有人警告下撞墙。',
+  },
+  {
+    title: 'The Wide Wide Sea',
+    author: 'Hampton Sides',
+    year: 2024,
+    taste: 'INTJ / INTP / ENTP',
+    note: 'Cook 船长第三次也是最后一次南太平洋航行。启蒙者如何变成入侵者。',
+  },
+  {
+    title: 'The Anxious Generation',
+    author: 'Jonathan Haidt',
+    year: 2024,
+    taste: 'ENFJ / ESTJ / ISFJ',
+    note: '智能手机如何重写一代人的心理。父母、教育者、对儿童议题敏感者必读。',
+  },
+  {
+    title: 'Slow Productivity',
+    author: 'Cal Newport',
+    year: 2024,
+    taste: 'INTJ / ISTJ / ENTJ',
+    note: '《Deep Work》作者新书。少做、做好、不焦虑——给被效率文化压垮的人。',
+  },
+  {
+    title: 'Help Wanted',
+    author: 'Adelle Waldman',
+    year: 2024,
+    taste: 'ISFJ / ESTJ / INFJ',
+    note: '哈得逊河谷某连锁商超凌晨班的群像小说。蓝领、希望、被算法管理的尊严。',
+  },
+
+  // ── 法语 Nobel 中译扩充 ───────────────────────────────────
+  {
+    title: '一个女人',
+    original_title: 'Une femme',
+    author: 'Annie Ernaux',
+    year: 2023,
+    taste: 'INFJ / INFP / ISFJ',
+    note: '诺奖得主写母亲的去世。"我在写她"既是悼念也是阶级分析。中译post-Nobel 引进。',
+  },
+  {
+    title: '简单的激情',
+    original_title: 'Passion simple',
+    author: 'Annie Ernaux',
+    year: 2024,
+    taste: 'INFP / INFJ / ENFP',
+    note: '一段不对等情事的诚实记录。Ernaux 把欲望写成社会学田野。',
+  },
+
   // ── 2026 ──────────────────────────────────────────────────
   // 我（Claude）的训练数据延伸到 2026 年 1 月，2026 年的"已上市新书"我能识别的极少
   // （多数 2026 新书在我训练时还是预告，没正式发售/没上豆瓣）。
