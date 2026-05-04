@@ -161,6 +161,55 @@ export const RECENT_BOOKS: RecentBook[] = [
     taste: 'INFP / INFJ / ENTP',
     note: 'Nelson 写下颌慢性疼痛的小书。极薄、极锋利，写身体的不可言说。',
   },
+  {
+    title: 'Creation Lake',
+    author: 'Rachel Kushner',
+    year: 2024,
+    taste: 'INTJ / ENTJ / INTP',
+    note: '布克奖入围。卧底女间谍渗透法国乡村激进派。冷峻、智性、Le Carré 的味道。',
+  },
+  {
+    title: 'Held',
+    author: 'Anne Michaels',
+    year: 2024,
+    taste: 'INFJ / INFP / ISFP',
+    note: '布克奖入围。一战伤兵到当代，四代人的爱与丧失。诗化叙事、跨越百年。',
+  },
+  {
+    title: 'Kairos',
+    author: 'Jenny Erpenbeck',
+    year: 2024,
+    taste: 'INTJ / INFJ / INFP',
+    note: '国际布克奖。东柏林一段不对等的爱情，与一个国家同时崩塌。',
+  },
+  {
+    title: 'Headshot',
+    author: 'Rita Bullwinkel',
+    year: 2024,
+    taste: 'ESTP / ENTP / ESTJ',
+    note: '内华达少女拳击锦标赛两天的小说。八段对决，八种身体与未来。罕见硬题材。',
+  },
+  {
+    title: 'Knife',
+    author: 'Salman Rushdie',
+    year: 2024,
+    taste: 'ENTP / ENTJ / INTJ',
+    note: '遇袭康复回忆录。从被刺到失去右眼的几个月。坦然、不饶恕、文学如何对抗暴力。',
+  },
+  {
+    title: 'The Möbius Book',
+    author: 'Catherine Lacey',
+    year: 2025,
+    taste: 'INFP / INFJ / INTP',
+    note: '一本书两面：一面回忆录，一面虚构。分手与时间结构的实验。',
+  },
+  {
+    title: 'Authority',
+    author: 'Andrea Long Chu',
+    year: 2025,
+    taste: 'INTJ / INTP / ENTP',
+    note: '普利策评论奖得主首部文集。批评作为权力分析——Hanya Yanagihara、巴勒斯坦、跨性别。',
+  },
 
   // ── 2026 ──────────────────────────────────────────────────
   // 我（Claude）的训练数据延伸到 2026 年 1 月，2026 年的"已上市新书"我能识别的极少
