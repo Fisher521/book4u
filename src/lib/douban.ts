@@ -118,6 +118,10 @@ async function suggest(query: string): Promise<SuggestItem[]> {
 }
 
 export async function verifyBook(title: string, author: string): Promise<DoubanResult> {
+  // Strip stray 《》 / quotes the LLM sometimes wraps the title in — douban's
+  // suggest endpoint won't match if the query contains the brackets.
+  title = title.replace(/^[《<「『]+|[》>」』]+$/g, '').trim();
+
   const cacheKey = `${normalize(title)}|${normalize(author)}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;

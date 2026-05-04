@@ -116,6 +116,11 @@ const REQUEST_TIMEOUT_MS = 420_000;
 const FORM_KEY = 'mood-reader:form';
 const RESULT_KEY = 'mood-reader:result';
 
+// LLM sometimes returns titles already wrapped in 《》, which gets double-wrapped at render.
+function cleanTitle(t: string): string {
+  return t.replace(/^[《<「『]+|[》>」』]+$/g, '').trim();
+}
+
 export default function Home() {
   const [expression, setExpression] = useState('');
   const [mbti, setMbti] = useState('INFJ');
@@ -581,13 +586,13 @@ function buildShareText(data: Recommendation): string {
   lines.push('');
   // First resonance hook as opener (most relatable)
   if (data.resonance[0]) {
-    lines.push(`《${data.resonance[0].title}》— ${data.resonance[0].author}`);
+    lines.push(`《${cleanTitle(data.resonance[0].title)}》— ${data.resonance[0].author}`);
     if (data.resonance[0].hook) lines.push(`  ${data.resonance[0].hook}`);
     lines.push('');
   }
   // 1 from break_bubble (the "你不会主动找的") — adds intrigue
   if (data.break_bubble[0]) {
-    lines.push(`《${data.break_bubble[0].title}》— ${data.break_bubble[0].author}`);
+    lines.push(`《${cleanTitle(data.break_bubble[0].title)}》— ${data.break_bubble[0].author}`);
     if (data.break_bubble[0].hook) lines.push(`  ${data.break_bubble[0].hook}`);
     lines.push('');
   }
@@ -610,7 +615,7 @@ function BookEntry({
   const matchLabel = kind === 'resonance' ? '同频于 ——' : '破的是 ——';
   const matchText = kind === 'resonance' ? entry.mood_match : entry.breaks_from;
 
-  const searchKey = `${entry.title} ${entry.author}`;
+  const searchKey = `${cleanTitle(entry.title)} ${entry.author}`;
   const doubanFallback = `https://search.douban.com/book/subject_search?search_text=${encodeURIComponent(searchKey)}`;
   const dbStatus = entry.douban?.status;
   const doubanUrl = dbStatus === 'ok' ? entry.douban!.douban_url ?? doubanFallback : doubanFallback;
@@ -628,13 +633,13 @@ function BookEntry({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={proxiedCover} alt={entry.title} loading="lazy" />
           ) : (
-            <span className="cover-label"><em>《{entry.title}》<br/>无封面</em></span>
+            <span className="cover-label"><em>《{cleanTitle(entry.title)}》<br/>无封面</em></span>
           )}
         </div>
 
         <div className="head">
           <div className="title-row">
-            <h3 className="title">《{entry.title}》</h3>
+            <h3 className="title">《{cleanTitle(entry.title)}》</h3>
             {entry.category && <span className="category">{entry.category}</span>}
           </div>
           <p className="author">{entry.author}</p>
