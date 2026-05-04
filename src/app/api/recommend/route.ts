@@ -92,11 +92,12 @@ const BooksOnlySchema = z.object({
 type BooksOnly = z.infer<typeof BooksOnlySchema>;
 
 // Models — configurable via env, defaults tuned for cost/quality balance:
-//   Stage 1 needs vision → VL-Max
-//   Stage 2/Critique need text reasoning → Max-Latest (Qwen's strongest)
+//   Stage 1 needs vision → VL-Max (¥0.02/K)
+//   Stage 2/Critique need text reasoning → Plus by default (¥0.0008 in / ¥0.002 out)
+//   For premium quality (~10-15% better but 15x cost), set STAGE2_MODEL=qwen-max-latest
 const STAGE1_MODEL = process.env.STAGE1_MODEL || 'qwen-vl-max';
-const STAGE2_MODEL = process.env.STAGE2_MODEL || 'qwen-max-latest';
-const CRITIQUE_MODEL = process.env.CRITIQUE_MODEL || 'qwen-max-latest';
+const STAGE2_MODEL = process.env.STAGE2_MODEL || 'qwen-plus-latest';
+const CRITIQUE_MODEL = process.env.CRITIQUE_MODEL || 'qwen-plus-latest';
 
 const SLOT_LABEL: Record<number, string> = {
   0: '共鸣 #1【陪伴】— 接住情绪 / 文学性强 / 不教导',

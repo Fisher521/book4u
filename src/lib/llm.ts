@@ -33,6 +33,7 @@ const QWEN_PRICING: Record<string, { input: number; output: number }> = {
   'qwen-vl-max': { input: 0.02 / 7, output: 0.02 / 7 },
   'qwen-max-latest': { input: 0.04 / 7, output: 0.12 / 7 },
   'qwen-max': { input: 0.04 / 7, output: 0.12 / 7 },
+  'qwen-plus-latest': { input: 0.0008 / 7, output: 0.002 / 7 },
   'qwen-plus': { input: 0.0008 / 7, output: 0.002 / 7 },
 };
 
