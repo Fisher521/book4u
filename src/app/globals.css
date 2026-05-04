@@ -542,10 +542,10 @@
     }
   }
 
-  /* cover + head row — left cover, right title/category/byline/hook */
+  /* cover + head row — left cover, right title/category/author/author-note */
   .book .cover-row {
     display: grid;
-    grid-template-columns: 100px 1fr;
+    grid-template-columns: 108px 1fr;
     gap: 28px;
     align-items: start;
     margin-bottom: 22px;
@@ -555,8 +555,8 @@
   }
 
   .book .cover {
-    width: 100px;
-    height: 144px;
+    width: 108px;
+    height: 156px;
     background: var(--paper-deep);
     background-image:
       repeating-linear-gradient(135deg,
@@ -623,14 +623,23 @@
     white-space: nowrap;
   }
 
-  .book .byline {
+  /* author + author-note as two separate lines, harmonious with cover height */
+  .book .author {
     font-family: var(--font-serif);
-    font-size: 14px;
-    color: var(--ink-soft);
-    margin: 0 0 16px;
+    font-size: 15px;
+    color: var(--ink);
+    margin: 12px 0 2px;
+    line-height: 1.4;
   }
-  .book .byline .em { margin: 0 8px; color: var(--ink-muted); }
-  .book .byline .tag { font-style: italic; color: var(--ink-muted); }
+  .book .author-note {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-muted);
+    letter-spacing: 0.02em;
+    margin: 0 0 8px;
+    line-height: 1.5;
+  }
 
   /* hook now sits below ornament as the literary lead-in to the why paragraph */
   .book .hook { margin-bottom: 14px; }
@@ -841,12 +850,13 @@
     .section-opener .descriptor { font-size: 14px; }
 
     .book { padding: 32px 0; }
-    .book .cover-row { grid-template-columns: 72px 1fr; gap: 18px; }
-    .book .cover { width: 72px; height: 104px; margin: 0; }
+    .book .cover-row { grid-template-columns: 80px 1fr; gap: 18px; }
+    .book .cover { width: 80px; height: 116px; margin: 0; }
     .book .numeral { font-size: 30px; margin-bottom: 14px; }
     .book .title { font-size: 22px; line-height: 1.25; }
     .book .category { font-size: 11px; padding: 1px 7px; }
-    .book .byline { font-size: 13px; margin: 8px 0 12px; }
+    .book .author { font-size: 14px; margin-top: 10px; }
+    .book .author-note { font-size: 12px; margin-bottom: 8px; }
     .book .hook { font-size: 17px; line-height: 1.6; margin-bottom: 12px; }
     .book .why { font-size: 16px; line-height: 1.85; }
     .book .match { font-size: 13px; line-height: 1.7; margin-top: 16px; }

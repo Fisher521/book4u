@@ -578,15 +578,8 @@ function BookEntry({
             <h3 className="title">《{entry.title}》</h3>
             {entry.category && <span className="category">{entry.category}</span>}
           </div>
-          <p className="byline">
-            <span>{entry.author}</span>
-            {entry.author_note && (
-              <>
-                <span className="em">——</span>
-                <span className="tag">{entry.author_note}</span>
-              </>
-            )}
-          </p>
+          <p className="author">{entry.author}</p>
+          {entry.author_note && <p className="author-note">{entry.author_note}</p>}
         </div>
       </div>
 
