@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="5" fill="#2a241c"/>
+  <text x="16" y="17" text-anchor="middle" dominant-baseline="central"
+        font-family="'Iowan Old Style', 'Palatino Linotype', 'Songti SC', 'STSong', Georgia, serif"
+        font-size="22" font-weight="400" fill="#faf6ec">书</text>
+</svg>
