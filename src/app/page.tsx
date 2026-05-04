@@ -522,13 +522,22 @@ function BookEntry({
   );
 }
 
-/* — channel icon — minimalist line-art, monochrome via currentColor — */
+/* — Douban brand icon: green rounded square with white "豆" — */
 function DoubanIcon() {
   return (
-    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" aria-hidden>
-      <rect x="2" y="2.5" width="10" height="9" rx="0.8" />
-      <line x1="4.4" y1="6" x2="9.6" y2="6" />
-      <line x1="4.4" y1="8.4" x2="7.8" y2="8.4" />
+    <svg viewBox="0 0 16 16" aria-hidden>
+      <rect width="16" height="16" rx="3" fill="#00b51d" />
+      <text
+        x="8"
+        y="11.5"
+        textAnchor="middle"
+        fontFamily="-apple-system, 'PingFang SC', 'Hiragino Sans GB', sans-serif"
+        fontSize="11"
+        fontWeight="800"
+        fill="#fff"
+      >
+        豆
+      </text>
     </svg>
   );
 }
