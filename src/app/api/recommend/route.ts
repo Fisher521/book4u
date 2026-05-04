@@ -568,6 +568,47 @@ function flatten(rec: Recommendation): Array<ResonanceBook | BreakBubbleBook> {
   return [...rec.resonance, ...rec.break_bubble];
 }
 
+/**
+ * Detect 5 books containing duplicates (same book, possibly with different
+ * title/author formatting — e.g. Chinese vs English version).
+ * Returns the indices of duplicates that should be replaced (keep first occurrence).
+ */
+function findDuplicateIndices(books: Array<ResonanceBook | BreakBubbleBook>): number[] {
+  // Aggressive normalization — strip punctuation, brackets, lower case, only CJK + letters
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/[\[\]【】（）()·\.\s,，:：;；'"`、_\-\/]/g, '')
+      .replace(/[a-z]+/g, (m) => m) // keep letters
+      .trim();
+
+  // Extract a stable key per book — author tokens (CJK chunks + alpha chunks ≥ 2)
+  const tokens = (s: string): Set<string> => {
+    const matches = s.match(/[一-鿿]+|[a-zA-Z]+/g) ?? [];
+    return new Set(matches.filter((t) => t.length >= 2).map((t) => t.toLowerCase()));
+  };
+
+  const dupIndices: number[] = [];
+  for (let i = 1; i < books.length; i++) {
+    for (let j = 0; j < i; j++) {
+      const ti = norm(books[i].title);
+      const tj = norm(books[j].title);
+      // Same/contained title?
+      const titleMatch = ti === tj || ti.includes(tj) || tj.includes(ti);
+      // Author overlap (any shared token ≥ 2 chars)?
+      const ai = tokens(books[i].author);
+      const aj = tokens(books[j].author);
+      const authorOverlap = [...ai].some((t) => aj.has(t));
+
+      if (titleMatch && authorOverlap) {
+        dupIndices.push(i);
+        break;
+      }
+    }
+  }
+  return dupIndices;
+}
+
 function isOk(v: DoubanResult): boolean {
   return v.status === 'ok';
 }
@@ -758,9 +799,21 @@ ${JSON.stringify(booksValidated, null, 2)}
           };
           const books = flatten(validated);
 
+          // ── Code-level dedup: catch same book with different title/author
+          //    formatting (e.g. Chinese vs English versions). Mark for retry. ──
+          const dupIndices = findDuplicateIndices(books);
+          if (dupIndices.length > 0) {
+            console.warn('[dedup] duplicate books detected at indices:', dupIndices);
+          }
+
           // ── Verify on douban ──
           send({ type: 'stage', stage: 'verifying' });
           let verified = await verifyMany(books);
+
+          // Mark duplicates as 'mismatch' so the retry loop replaces them
+          for (const idx of dupIndices) {
+            verified[idx] = { status: 'mismatch' as const };
+          }
 
           // ── Retry loop (uses Stage 2 model for replacements) ──
           let retryRound = 0;
