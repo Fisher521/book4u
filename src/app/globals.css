@@ -603,12 +603,25 @@
   }
   .book .title {
     font-family: var(--font-serif);
-    font-size: clamp(24px, 3vw, 30px);
+    font-size: clamp(22px, 3vw, 30px);
     font-weight: 400;
-    line-height: 1.18;
+    line-height: 1.22;
     margin: 0;
     color: var(--ink);
     letter-spacing: -0.005em;
+    /* prevent 《》 orphan punctuation + balance wrap */
+    text-wrap: pretty;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    hanging-punctuation: allow-end last;
+  }
+  /* Mobile: tighter title to fit narrow right column without 》orphans */
+  @media (max-width: 540px) {
+    .book .title {
+      font-size: clamp(19px, 5.6vw, 24px);
+      line-height: 1.25;
+      text-wrap: balance;
+    }
   }
 
   .book .category {
@@ -861,8 +874,8 @@
     .section-opener .descriptor { font-size: 14px; }
 
     .book { padding: 32px 0; }
-    .book .cover-row { grid-template-columns: 80px 1fr; gap: 18px; }
-    .book .cover { width: 80px; height: 116px; margin: 0; }
+    .book .cover-row { grid-template-columns: 72px 1fr; gap: 16px; }
+    .book .cover { width: 72px; height: 104px; margin: 0; }
     .book .numeral { font-size: 30px; margin-bottom: 14px; }
     .book .title { font-size: 22px; line-height: 1.25; }
     .book .category { font-size: 11px; padding: 1px 7px; }

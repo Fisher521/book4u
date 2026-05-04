@@ -10,7 +10,15 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
-const data = JSON.parse(readFileSync(join(__dirname, 'scraped-douban-tight.json'), 'utf8'));
+// Use ALL filtered books from raw scrape (rating>=7.5, votes>=100 already applied)
+const raw = JSON.parse(readFileSync(join(__dirname, 'scraped-douban.json'), 'utf8'));
+const data = raw.sort((a, b) => {
+  if (a.year !== b.year) return a.year - b.year;
+  return b.votes - a.votes;
+});
+const counts = { 2024: 0, 2025: 0, 2026: 0 };
+for (const b of data) counts[b.year]++;
+console.log(`24:${counts[2024]} 25:${counts[2025]} 26:${counts[2026]} → total ${data.length}`);
 
 const escape = (s) => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
