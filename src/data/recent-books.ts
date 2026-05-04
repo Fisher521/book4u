@@ -252,7 +252,8 @@ export function formatRecentBooksForPrompt(books: RecentBook[] = RECENT_BOOKS): 
   const lines = books.map(
     (b) => `- 《${b.title}》${b.author}（${b.year}）— 适合：${b.taste} — ${b.note}`,
   );
-  return `\n── 近期新书候选池（带 MBTI 标签，按 taste 判断匹配）──
+  return `\n── 近期新书池（hint，非菜单）──
+（你训练 cutoff 后的好书，不知道的可以用；知道更对的书，用更对的）
 ${lines.join('\n')}
 `;
 }
